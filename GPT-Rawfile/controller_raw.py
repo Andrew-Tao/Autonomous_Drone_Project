@@ -38,7 +38,7 @@ def pd_controller(state, thetadot, Kd, Kp):
         state['integral'] = np.zeros(3)
 
     # Compute total thrust.
-    total = (state['mass'] * state['gravitational_acceleration']) / state['thrust_coefficient'] / (
+    total = (state['m'] * state['g']) / state['k'] / (
             np.cos(state['integral'][0]) * np.cos(state['integral'][1])
     )
 
@@ -78,7 +78,7 @@ def pid_controller(state, thetadot, Kd, Kp, Ki):
         state['integral2'].fill(0)
 
     # Compute total thrust.
-    total = (state['mass'] * state['gravitational_acceleration']) / state['thrust_coefficient'] / (
+    total = (state['m'] * state['g']) / state['k'] / (
             np.cos(state['integral'][0]) * np.cos(state['integral'][1])
     )
 
@@ -112,14 +112,12 @@ def err2inputs(state, err, total):
     Ix = state['I'][0, 0]
     Iy = state['I'][1, 1]
     Iz = state['I'][2, 2]
-    k = state['thrust_coefficient']
-    L = state['length']
-    b = state['torque_coefficient']
+    k = state['k']
+    L = state['L']
+    b = state['b']
 
     # Compute inputs
     inputs = np.zeros(4)
-
-
     inputs[0] = total / 4 - (2 * b * e1 * Ix + e3 * Iz * k * L) / (4 * b * k * L)
     inputs[1] = total / 4 + e3 * Iz / (4 * b) - (e2 * Iy) / (2 * k * L)
     inputs[2] = total / 4 - (-2 * b * e1 * Ix + e3 * Iz * k * L) / (4 * b * k * L)

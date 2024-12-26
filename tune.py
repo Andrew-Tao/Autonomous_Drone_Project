@@ -3,7 +3,7 @@ from numpy.linalg import lstsq
 import random
 
 from controller import controller
-from simulate import simulate
+import simulate
 
 
 def tune():
