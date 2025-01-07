@@ -1,7 +1,10 @@
 import numpy as np
+from matplotlib.pyplot import thetagrids
+
 import rotation
 import controller
 import matplotlib.pyplot as plt
+from plot import plot_the_motion
 
 def simulate (controller, tstart, tend, dt):
     #Physical constants
@@ -35,32 +38,39 @@ def simulate (controller, tstart, tend, dt):
     }
 
     #Initialize the Parameters
-    position = np.array([0,0,10])
+    position = np.array([0,0,0])
    # print(position)
     velocity = np.zeros(3)
     theta = np.zeros(3)
+    """
+    theta[0] = 0
+    theta[1] = np.pi/2
+    theta[2] = 0
+    """
 
     if controller is None:
         thetadot = np.zeros(3)
     else:
         deviation = 300  # Random deviation for angular velocity in degrees/sec
         #thetadot = np.radians(2 * deviation * np.random.rand(3) - deviation)
-        thetadot=np.array([-0.90556813 , - 2.41338998 , 5.17105039])
+        thetadot=np.array([1.2 , -1, 7])
 
     i = -1
     for t in enumerate(ts):
+
         i = i + 1
         if controller is None:
             inputs = input_function(t)
         else:
             inputs, controller_params = controller(controller_params, thetadot)
 
-       # print(inputs)
+
+
 
         omega = thetadot2omega(thetadot, theta)
 
         a = compute_acceleration(inputs, theta, velocity, mass, gravitational_acceleration, thrust_coefficient, drag_coefficient)
-      #  print("a=", a)
+        print(inputs,"thrust=",compute_thrust(inputs,thrust_coefficient),"a=", a)
         omegadot = compute_angular_acceleration(inputs, omega, I, length, torque_coefficient, thrust_coefficient)
 
 
@@ -163,21 +173,32 @@ def omega2thetadot(omega, angles):
     return thetadot
 
 
-results = simulate(controller.controller('pid', 0.5, 0.04, 0.1), 0, 5, 0.01)
-
+results = simulate(controller.controller('customize', 0.5, 0.04, 0.1), 0, 3, 0.01)
 position_history = results['position']
+theta_history = results['theta']
+
+
 time = results['time']
 
-plt.plot(time, position_history[0], color='black', marker='*',linestyle='--', label='Position_x')
-plt.plot(time, position_history[1], color='red', marker='*',linestyle=':', label='Position_y')
-plt.plot(time, position_history[2], color='blue', marker='*',linestyle=':', label='Position_z')
+print(theta_history)
 
-plt.title('Drone_Position')
-      # Title
-plt.xlabel('time')                     # X-axis label
-plt.ylabel('x_y_z position')                     # Y-axis label
-plt.grid()
-plt.legend()# Optional: Add a grid
-plt.show()                                    # Display the plot
+# Generate some random data
+x = position_history[0]
+y = position_history[1]
+z = position_history[2]
 
 
+# Create a figure and 3D axis
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+# Scatter plot
+ax.scatter(x, y, z, c=z, cmap='viridis')  # `c` is used to color points based on their z values
+
+# Show the plot
+plt.show()
+
+
+
+
+plot_the_motion(position_history,theta_history)
