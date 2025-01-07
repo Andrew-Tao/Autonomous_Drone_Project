@@ -15,10 +15,18 @@ def controller(name, Kd=None, Kp=None, Ki=None):
         return lambda state, thetadot: pd_controller(state, thetadot, Kd, Kp)
     elif name.lower() == 'pid':
         return lambda state, thetadot: pid_controller(state, thetadot, Kd, Kp, Ki)
+    elif name.lower() == 'customize':
+        return lambda state, thetadot: cutomize_controller(state, thetadot, Kd, Kp)
     else:
         raise ValueError(f'Unknown controller type "{name}"')
 
-
+def cutomize_controller(state, thetadot, Kd, Kp):
+    input_signal = np.zeros(4)
+    input_signal[0] = (9.81 * 0.5 / 3e-6  /4) + 1.1*1e5
+    input_signal[1] = (9.81 * 0.5 / 3e-6  /4) + 1.1*1e5
+    input_signal[2] = (9.81 * 0.5 / 3e-6  /4) + 1e5
+    input_signal[3] = (9.81 * 0.5 / 3e-6  /4) + 1e5
+    return input_signal, state
 # Implement a PD controller. See simulate(controller).
 def pd_controller(state, thetadot, Kd, Kp):
     """
