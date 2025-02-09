@@ -1,5 +1,5 @@
 import numpy as np
-
+import math
 
 # Create a controller based on its name, using a look-up table.
 def controller(name, Kd=None, Kp=None, Ki=None):
@@ -16,18 +16,27 @@ def controller(name, Kd=None, Kp=None, Ki=None):
     elif name.lower() == 'pid':
         return lambda state, thetadot: pid_controller(state, thetadot, Kd, Kp, Ki)
     elif name.lower() == 'customize':
-        return lambda state, thetadot: cutomize_controller(state, thetadot, Kd, Kp)
+        return lambda state, thetadot: customize_controller(state, thetadot, Kd, Kp)
     else:
         raise ValueError(f'Unknown controller type "{name}"')
+    
 
-def cutomize_controller(state, thetadot, Kd, Kp):
+def customize_controller(state, thetadot, Kd, Kp):
+    if 'time' not in state:
+        state['time'] = 0.0
+
+    state['time'] += state['dt']
+
     input_signal = np.zeros(4)
-    input_signal[0] = (9.81 * 0.5 / 3e-6  /4) + 1.1*1e5
-    input_signal[1] = (9.81 * 0.5 / 3e-6  /4) + 1.1*1e5
-    input_signal[2] = (9.81 * 0.5 / 3e-6  /4) + 1e5
-    input_signal[3] = (9.81 * 0.5 / 3e-6  /4) + 1e5
+    input_signal[0] = (9.81 * 0.5 / 3e-6  /4) + 1.1*1e5+math.e**(10*state['time'])
+    input_signal[1] = (9.81 * 0.5 / 3e-6  /4) + 1.1*1e5+math.e**(10*state['time'])
+    input_signal[2] = (9.81 * 0.5 / 3e-6  /4) + 1e5+math.e**state['time']
+    input_signal[3] = (9.81 * 0.5 / 3e-6  /4) + 1e5+math.e**state['time']
+    
     return input_signal, state
 # Implement a PD controller. See simulate(controller).
+
+
 def pd_controller(state, thetadot, Kd, Kp):
     """
     PD controller implementation.

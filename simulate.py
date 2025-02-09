@@ -34,7 +34,8 @@ def simulate (controller, tstart, tend, dt):
         'torque_coefficient':torque_coefficient,
         'gravitational_acceleration':gravitational_acceleration,
         'mass':mass,
-        'length':length
+        'length':length,
+        'time': 0.0
     }
 
     #Initialize the Parameters
