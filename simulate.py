@@ -6,15 +6,73 @@ import controller
 import matplotlib.pyplot as plt
 from plot import plot_the_motion
 
+class Drone:
+    """Quadrotor UAV physical state container"""
+    
+    def __init__(self, config):
+        """
+        Initialize drone with physical parameters
+        
+        Args:
+            config (dict): Configuration dictionary containing:
+                - mass (float): Drone mass in kg
+                - I (np.array): 3x3 inertia matrix (kg·m²)
+                - thrust_coefficient (float): Thrust coefficient (N·s²)
+                - torque_coefficient (float): Torque coefficient (N·m·s²)
+                - length (float): Arm length from center to motor (m)
+        """
+        # Physical constants
+        self.mass = config['mass']
+        self.I = config['I']
+        self.thrust_coefficient = config['thrust_coefficient']
+        self.torque_coefficient = config['torque_coefficient']
+        self.length = config['length']
+        
+        # Dynamic state variables
+        self.position = np.zeros(3)  # [x, y, z] in world frame (m)
+        self.velocity = np.zeros(3)  # [vx, vy, vz] in world frame (m/s)
+        self.theta = np.zeros(3)     # Euler angles [φ, θ, ψ] (roll, pitch, yaw) (rad)
+        self.omega = np.zeros(3)     # Angular velocity in body frame (rad/s)
+        self.last_inputs = np.zeros(4)  # Motor inputs [ω1², ω2², ω3², ω4²]
+
+    @property
+    def rotation_matrix(self):
+        """Compute current rotation matrix from Euler angles
+        
+        Returns:
+            np.array: 3x3 rotation matrix transforming body to world frame
+        """
+        return rotation(self.theta)
+
+    def get_controller_state(self):
+        """Prepare controller input state dictionary
+        
+        Returns:
+            dict: State parameters needed by controllers
+        """
+        return {
+            'mass': self.mass,
+            'I': self.I,
+            'length': self.length,
+            'thrust_coefficient': self.thrust_coefficient,
+            'torque_coefficient': self.torque_coefficient,
+            'integral': self.theta.copy(),  # For PID controllers
+            'dt': 0.01  # Default, will be overwritten in simulation
+        }
+
 def simulate (controller, tstart, tend, dt):
+    # Drone configuration
+    drone_config = {
+        'mass': 0.5,
+        'I': np.diag([5e-3, 5e-3, 10e-3]),
+        'thrust_coefficient': 3e-6,
+        'torque_coefficient': 1e-7,
+        'length': 0.25
+    }
+    drone = Drone(drone_config)
+    
     #Physical constants
     gravitational_acceleration  = 9.81
-    mass = 0.5
-    length = 0.25
-    thrust_coefficient = 3e-6
-    torque_coefficient = 1e-7
-    I = np.zeros((3,3))
-    np.fill_diagonal(I, [5e-3,5e-3,10e-3])
     drag_coefficient = 0.25
 
     ts = np.arange(tstart, tend, dt)
@@ -29,12 +87,12 @@ def simulate (controller, tstart, tend, dt):
 
     controller_params = {
         'dt':dt,
-        'I':I,
-        'thrust_coefficient':thrust_coefficient,
-        'torque_coefficient':torque_coefficient,
+        'I':drone.I,
+        'thrust_coefficient':drone.thrust_coefficient,
+        'torque_coefficient':drone.torque_coefficient,
         'gravitational_acceleration':gravitational_acceleration,
-        'mass':mass,
-        'length':length,
+        'mass':drone.mass,
+        'length':drone.length,
         'time': 0.0
     }
 
@@ -70,9 +128,9 @@ def simulate (controller, tstart, tend, dt):
 
         omega = thetadot2omega(thetadot, theta)
 
-        a = compute_acceleration(inputs, theta, velocity, mass, gravitational_acceleration, thrust_coefficient, drag_coefficient)
-        print(inputs,"thrust=",compute_thrust(inputs,thrust_coefficient),"a=", a)
-        omegadot = compute_angular_acceleration(inputs, omega, I, length, torque_coefficient, thrust_coefficient)
+        a = compute_acceleration(inputs, theta, velocity, drone.mass, gravitational_acceleration, drone.thrust_coefficient, drag_coefficient)
+        print(inputs,"thrust=",compute_thrust(inputs,drone.thrust_coefficient),"a=", a)
+        omegadot = compute_angular_acceleration(inputs, omega, drone.I, drone.length, drone.torque_coefficient, drone.thrust_coefficient)
 
 
         #update the parameters
